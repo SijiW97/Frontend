@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trash2, Edit2, Check, X, Plus } from 'lucide-react';
 import axios from "axios";
 
-const API_URL = 'http://localhost:5000/api/todos';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const TodoApp = () => {
   const [todos, setTodos] = useState([]);
@@ -61,7 +61,7 @@ const toggleComplete = async (id, completed) => {
     }
   };
 
-  
+
   const startEdit = (todo) => {
     setEditingId(todo._id);
     setEditText(todo.title);
