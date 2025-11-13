@@ -31,7 +31,8 @@ const TodoApp = () => {
     setTimeout(() => setToast({ show: false, message: '', type: '' }), 2500);
   };
 
-  const addTodo = async () => {
+  const addTodo = async (e) => {
+    e.preventDefault(); 
     if (!newTodo.trim()) return;
      try {
       const response = await axios.post(API_URL, { title: newTodo });
@@ -67,13 +68,18 @@ const toggleComplete = async (id, completed) => {
     setEditText(todo.title);
   };
 
-  const saveEdit = (id) => {
-    if (!editText.trim()) return;
-    setTodos(todos.map(t => (t._id === id ? { ...t, title: editText } : t)));
+  const saveEdit = async (id) => {
+  if (!editText.trim()) return;
+  try {
+    const response = await axios.put(`${API_URL}/${id}`, { title: editText });
+    setTodos(todos.map(t => (t._id === id ? response.data : t)));
     setEditingId(null);
     setEditText('');
     showToast('Todo updated!');
-  };
+  } catch (error) {
+    console.error("Error updating todo:", error);
+  }
+};
 
   const cancelEdit = () => {
     setEditingId(null);
@@ -161,7 +167,7 @@ const toggleComplete = async (id, completed) => {
               >
                 <div className="flex items-center space-x-3 flex-1">
                   <button
-                    onClick={() => toggleComplete(todo._id)}
+                    onClick={() => toggleComplete(todo._id, todo.completed)}
                     className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${
                       todo.completed
                         ? 'bg-white border-white'
