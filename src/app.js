@@ -10,8 +10,8 @@ const TodoApp = () => {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [filter, setFilter] = useState('all');
-  const [toast, setToast] = useState({ show: false, message: '', type: '' });
-  const [loading, setLoading] = useState(false);
+  const [setToast] = useState({ show: false, message: '', type: '' });
+  const [loading ] = useState(false);
 
  useEffect(() => {
     fetchTodos();
