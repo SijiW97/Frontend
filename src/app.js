@@ -13,6 +13,8 @@ const TodoApp = () => {
   const [filter, setFilter] = useState('all');
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
   const [loading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [emailContent, setEmailContent] = useState("");
 
   useEffect(() => {
     fetchTodos();
@@ -109,6 +111,50 @@ const TodoApp = () => {
     return true;
   });
 
+  // Open the modal and prepare the todo list content for sharing
+  const openModal = () => {
+    if (todos.length === 0) {
+      showToast("No todos to share!", "error");
+      return;
+    }
+    const content = todos
+      .map((todo, index) => `${index + 1}. ${todo.title} ${todo.completed ? "✅" : "⬜"}`)
+      .join("\n");
+    setEmailContent(content);
+    setModalVisible(true);
+  };
+
+  // Close the modal
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
+  // Open default email client with todos in body
+  const shareViaEmailClient = () => {
+    const subject = encodeURIComponent("My Todo List");
+    const body = encodeURIComponent(emailContent);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    showToast("Opening email client...");
+  };
+
+  // Copy todo list to clipboard
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(emailContent);
+      showToast("Todo list copied to clipboard!");
+      alert(`Todo List Preview Copied to Clipboard:\n\n${emailContent}`);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      showToast("Failed to copy to clipboard", "error");
+    }
+  };
+
+  // Preview the todo list content in a modal or alert
+  const showEmailPreview = () => {
+    alert(`Todo List Preview:\n\n${emailContent}`);
+  };
+
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="rounded-3xl p-8 w-full max-w-md shadow-2xl backdrop-blur-md"
@@ -123,10 +169,12 @@ const TodoApp = () => {
 
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white flex justify-center items-center gap-2">
-            📝 My Todo List
+          <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+            My Todo List
           </h1>
-          <p className="text-white/80 text-sm mt-1">Stay organized, stay productive</p>
+          <p className="text-white/90 text-sm mt-1 drop-shadow">
+            Stay organized, stay productive
+          </p>
         </div>
 
         {/* Input */}
@@ -136,15 +184,17 @@ const TodoApp = () => {
             value={newTodo}
             onChange={(e) => setNewTodo(e.target.value)}
             placeholder="What needs to be done?"
-            className="flex-1 rounded-xl px-4 py-2 text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="flex-1 rounded-xl px-4 py-2 text-gray-900 bg-white/90 focus:outline-none focus:ring-4 focus:ring-pink-300/50 shadow-md"
           />
+
           <button
             type="submit"
             disabled={loading}
-            className="ml-3 bg-white/30 hover:bg-white/50 text-white font-semibold px-5 py-2 rounded-xl transition"
+            className="ml-3 bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 text-white font-semibold px-5 py-2 rounded-xl transition-transform transform hover:scale-105 shadow-lg"
           >
             <Plus size={18} />
           </button>
+
         </form>
 
         {/* Filter Tabs */}
@@ -153,11 +203,16 @@ const TodoApp = () => {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`flex-1 py-2 text-white font-medium capitalize rounded-lg transition ${filter === f ? 'bg-white/30' : 'hover:bg-white/10'
+              className={`flex-1 py-2 font-medium capitalize rounded-lg transition 
+  ${filter === f
+                  ? "bg-gradient-to-r from-purple-400 to-pink-400 text-white shadow-md scale-105"
+                  : "bg-white/70 text-gray-800 hover:bg-white/80"
                 }`}
+
             >
               {f}
             </button>
+
           ))}
         </div>
 
@@ -185,19 +240,22 @@ const TodoApp = () => {
             filteredTodos.map(todo => (
               <div
                 key={todo._id}
-                className={`flex items-center justify-between bg-white/20 rounded-xl p-3 transition hover:bg-white/30 ${todo.completed ? 'opacity-70' : ''
+                className={`flex items-center justify-between bg-white/20 rounded-xl p-3 transition hover:bg-white/30 hover:scale-[1.02] backdrop-blur-md ${todo.completed ? "opacity-60" : ""
                   }`}
               >
+
                 <div className="flex items-center space-x-3 flex-1">
                   <button
                     onClick={() => toggleComplete(todo._id, todo.completed)}
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition ${todo.completed
-                        ? 'bg-white border-white'
-                        : 'border-white border-opacity-70 hover:border-opacity-100'
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition 
+    ${todo.completed
+                        ? "bg-gradient-to-r from-purple-400 to-pink-400 border-transparent shadow-md"
+                        : "border-white/70 hover:border-white"
                       }`}
                   >
-                    {todo.completed && <Check size={16} className="text-purple-600" />}
+                    {todo.completed && <Check size={16} className="text-white" />}
                   </button>
+
 
                   {editingId === todo._id ? (
                     <input
@@ -252,6 +310,35 @@ const TodoApp = () => {
                 </div>
               </div>
             ))
+          )}
+          <div className="flex justify-center">
+            <button onClick={openModal} disabled={todos.length === 0} className={`px-4 py-2 rounded-lg text-white font-semibold transition 
+      ${todos.length === 0
+                ? "bg-gray-400 cursor-not-allowed" // disabled style
+                : "bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90"
+              }`}>
+              Share the To Do List
+            </button>
+          </div>
+          {/* Modal */}
+          {modalVisible && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg w-96">
+                <h2 className="text-lg font-bold">Share Todo List</h2>
+                <button onClick={shareViaEmailClient} className="w-full mt-4 p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg">
+                  📧 Open Email Client
+                </button>
+                <button onClick={copyToClipboard} className="w-full mt-2 p-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg">
+                  📋 Copy to Clipboard
+                </button>
+                <button onClick={showEmailPreview} className="w-full mt-2 p-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg">
+                  👁️ Preview Content
+                </button>
+                <button onClick={closeModal} className="w-full mt-4 p-2 bg-gray-200 rounded-lg text-black">
+                  Cancel
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
